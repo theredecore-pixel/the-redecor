@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The ReDecor — Estimate Calculator</title>
+  <style>
+    /* Modern clean styles (Tailwind-inspired look without external libs) */
+    :root{--bg:#f8fafc;--card:#ffffff;--muted:#6b7280;--accent:#0b74de;--accent-2:#0bb3ff}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    .container{max-width:1100px;margin:22px auto;padding:18px}
+    header.app{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .brand{display:flex;flex-direction:column}
+    .brand h1{margin:0;font-size:20px;letter-spacing:0.2px}
+    .brand .sub{color:var(--muted);font-size:13px}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 22px rgba(15,23,42,0.06)}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
+    label{display:block;font-size:13px;color:#344054;margin-bottom:6px}
+    input[type=text],input[type=number],select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #e6e7eb;font-size:14px}
+    textarea{resize:vertical}
+    .service-chip{padding:8px 12px;border-radius:999px;border:1px solid #e6e7eb;background:#fff;cursor:pointer;margin-right:8px;margin-bottom:8px;display:inline-block}
+    .service-chip.active{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
+    .muted{color:var(--muted)}
+    .small{font-size:13px}
+    .btn{background:var(--accent);color:#fff;border:0;padding:10px 12px;border-radius:10px;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid #e6e7eb;color:#0f172a}
+    .row{display:flex;gap:10px}
+    .row > *{flex:1}
+    table{width:100%;border-collapse:collapse;margin-top:6px}
+    th,td{padding:10px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:14px}
+    .totals{font-weight:700;font-size:18px}
+    .diagram{background:#eef6ff;padding:12px;border-radius:10px;font-size:13px;margin-top:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    footer.note{margin-top:14px;color:var(--muted);font-size:13px}
+
+    /* Print styles for invoice */
+    @media print{
+      body{background:white}
+      .no-print{display:none}
+      .container{max-width:100%;padding:0}
+      header.app{display:none}
+    }
+
+    /* Responsive */
+    @media (max-width:880px){.grid{grid-template-columns:1fr} .container{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="app">
+      <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">RD</div>
+      <div class="brand">
+        <h1>The ReDecor</h1>
+        <div class="sub">Interior Estimates — Modular Kitchen · Wardrobe · TV Unit · False Ceiling</div>
+      </div>
+      <div style="margin-left:auto;text-align:right" class="muted small">
+        <div>Contact: +917001742792</div>
+        <div style="margin-top:2px">Email: mandalrahul488@gmail.com</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="row">
+            <div>
+              <label>Customer / Project</label>
+              <input id="customerName" type="text" placeholder="Customer name or address">
+            </div>
+            <div style="width:160px">
+              <label>Estimate date</label>
+              <input id="estimateDate" type="date">
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <label>Select service</label>
+          <div id="serviceChips">
+            <span class="service-chip active" data-key="Kitchen">Modular Kitchen</span>
+            <span class="service-chip" data-key="Wardrobe">Wardrobe</span>
+            <span class="service-chip" data-key="TVUnit">TV Unit</span>
+            <span class="service-chip" data-key="FalseCeiling">False Ceiling</span>
+          </div>
+        </div>
+
+        <div class="card" id="serviceForm">
+          <!-- rendered form -->
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:10px" class="no-print">
+          <button class="btn" id="addService">Add / Update Service</button>
+          <button class="btn ghost" id="clearService">Clear Inputs</button>
+          <button class="btn ghost" id="printInvoice">Print / Save as PDF</button>
+        </div>
+
+        <div class="diagram">
+          <b>How to measure Square Feet</b>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+            <svg viewBox="0 0 200 140" style="width:160px;flex:0 0 160px">
+              <rect x="30" y="20" width="140" height="100" fill="none" stroke="#0b74de" stroke-width="2" />
+              <text x="100" y="15" font-size="12" text-anchor="middle">Height (ft)</text>
+              <text x="100" y="135" font-size="12" text-anchor="middle">Length (ft)</text>
+              <text x="100" y="80" font-size="14" text-anchor="middle">Sqft = L × H</text>
+            </svg>
+            <div class="small muted">Measure <b>Length</b> and <b>Height</b> in feet and multiply the two to get square feet. Example: 8 ft × 2.5 ft = 20 sqft.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="small muted">Estimate summary</div>
+              <div style="font-weight:700;font-size:16px">Breakdown</div>
+            </div>
+            <div class="no-print small muted">You can print this page for a client-ready estimate</div>
+          </div>
+
+          <table aria-label="Estimate table">
+            <thead>
+              <tr><th style="width:22%">Service</th><th>Details</th><th style="width:120px">Amount (₹)</th></tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+            <div style="flex:1">
+              <div class="small muted">Totals</div>
+              <div class="totals" id="grandTotal">₹ 0</div>
+            </div>
+          </div>
+
+          <footer class="note">Generated by The ReDecor — revise rates before printing if needed.</footer>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+// --- Data & defaults ---
+const summaryBody = document.getElementById('summaryBody');
+let services = {};
+
+// Rates (as requested)
+const RATES = {
+  kitchen: {PVC:1500, Plywood:1300},
+  tvWardrobe: {budget:1200, premium:1500},
+  falseCeiling: {budget:70, premium:75}
+};
+
+// init date
+document.getElementById('estimateDate').valueAsDate = new Date();
+
+// Render service form depending on selected service
+function renderForm(key){
+  let html = '';
+  html += `
+    <div class="row">
+      <div>
+        <label>Length (ft)</label>
+        <input id="len" type="number" min="0" step="0.01" value="1">
+      </div>
+      <div>
+        <label>Height (ft)</label>
+        <input id="ht" type="number" min="0" step="0.01" value="1">
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <label>Square feet</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input id="sqft" type="text" readonly style="font-weight:700;padding:10px;border-radius:10px;border:1px solid #e6e7eb;background:#f8fafc">
+        <div class="small muted">Auto-calculated</div>
+      </div>
+    </div>
+  `;
+
+  if(key === 'Kitchen'){
+    html += `
+      <div style="margin-top:10px">
+        <label>Material</label>
+        <select id="matType">
+          <option value="PVC">PVC Board</option>
+          <option value="Plywood">Plywood</option>
+        </select>
+      </div>
+    `;
+  } else {
+    html += `
+      <div style="margin-top:10px">
+        <label>Quality</label>
+        <select id="quality">
+          <option value="budget">Budget Friendly</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+    `;
+  }
+
+  html += `
+    <div style="margin-top:10px">
+      <label>Rate (₹ / sqft)</label>
+      <input id="rate" type="text" readonly style="font-weight:700;padding:10px;border-radius:10px;border:1px solid #e6e7eb;background:#f8fafc">
+    </div>
+
+    <div style="margin-top:10px">
+      <label>Notes</label>
+      <textarea id="notes" rows="2" placeholder="E.g. shutters 6mm MDF, hardware: soft-close"></textarea>
+    </div>
+  `;
+
+  document.getElementById('serviceForm').innerHTML = html;
+  attachAutoCalc(key);
+  applyRateLogic(key);
+}
+
+function attachAutoCalc(key){
+  const len = document.getElementById('len');
+  const ht = document.getElementById('ht');
+  const sqftEl = document.getElementById('sqft');
+
+  function update(){
+    const l = Number(len.value || 0);
+    const h = Number(ht.value || 0);
+    const sqft = Math.round((l * h) * 100) / 100;
+    sqftEl.value = sqft.toLocaleString('en-IN', {maximumFractionDigits:2});
+    // update amount preview too
+    updateAmountPreview(key);
+  }
+  len.addEventListener('input', update);
+  ht.addEventListener('input', update);
+  update();
+}
+
+function applyRateLogic(key){
+  const rateInput = document.getElementById('rate');
+  const mat = document.getElementById('matType');
+  const q = document.getElementById('quality');
+
+  function setRate(){
+    if(key === 'Kitchen'){
+      const val = (mat && mat.value === 'PVC') ? RATES.kitchen.PVC : RATES.kitchen.Plywood;
+      rateInput.value = '₹ ' + val.toLocaleString('en-IN');
+    } else if(key === 'Wardrobe' || key === 'TVUnit'){
+      const val = (q && q.value === 'budget') ? RATES.tvWardrobe.budget : RATES.tvWardrobe.premium;
+      rateInput.value = '₹ ' + val.toLocaleString('en-IN');
+    } else if(key === 'FalseCeiling'){
+      const val = (q && q.value === 'budget') ? RATES.falseCeiling.budget : RATES.falseCeiling.premium;
+      rateInput.value = '₹ ' + val.toLocaleString('en-IN');
+    }
+    // also update amount preview when rate changes
+    updateAmountPreview(key);
+  }
+
+  if(mat) mat.addEventListener('change', setRate);
+  if(q) q.addEventListener('change', setRate);
+  setRate();
+}
+
+function parseRateText(rateText){
+  // '₹ 1,500' -> 1500
+  return Number(rateText.replace(/[^0-9.-]+/g, '')) || 0;
+}
+
+function updateAmountPreview(key){
+  const sqft = Number(document.getElementById('sqft').value.replace(/,/g,'') || 0);
+  const rate = parseRateText(document.getElementById('rate').value || '0');
+  // store a preview amount on form (not saved yet) by showing in notes small area (optional)
+  // (we won't show it here to keep UI clean)
+}
+
+// initial render
+renderForm('Kitchen');
+
+// service tab switching
+document.getElementById('serviceChips').addEventListener('click', e=>{
+  if(!e.target.classList.contains('service-chip')) return;
+  document.querySelectorAll('.service-chip').forEach(c=>c.classList.remove('active'));
+  e.target.classList.add('active');
+  renderForm(e.target.dataset.key);
+});
+
+// add / update service
+document.getElementById('addService').addEventListener('click', ()=>{
+  const key = document.querySelector('.service-chip.active').dataset.key;
+  const sqftText = document.getElementById('sqft').value || '0';
+  const sqft = Number(String(sqftText).replace(/,/g,'')) || 0;
+  const rate = parseRateText(document.getElementById('rate').value || '0');
+  const amt = Math.round((sqft * rate) * 100) / 100;
+
+  let details = `Sqft: ${sqft.toLocaleString('en-IN', {maximumFractionDigits:2})}, Rate: ${document.getElementById('rate').value}`;
+  if(key === 'Kitchen') details += `, Material: ${document.getElementById('matType').value}`;
+  else details += `, Quality: ${document.getElementById('quality').value === 'budget' ? 'Budget Friendly' : 'Premium'}`;
+  const notes = document.getElementById('notes').value || '';
+  if(notes) details += `<br>${notes}`;
+
+  services[key] = {key, details, amt};
+  renderSummary();
+});
+
+// clear inputs
+document.getElementById('clearService').addEventListener('click', ()=>{
+  renderForm(document.querySelector('.service-chip.active').dataset.key);
+});
+
+// print / save as PDF
+document.getElementById('printInvoice').addEventListener('click', ()=>{
+  const customer = document.getElementById('customerName').value || 'Customer';
+  const date = document.getElementById('estimateDate').value;
+  const rowsHtml = Array.from(document.querySelectorAll('#summaryBody tr')).map(r=>`<tr>${r.innerHTML}</tr>`).join('');
+  const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>Estimate - ${customer}</title><style>body{font-family:Arial;padding:20px;color:#111}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}h2{margin-top:0}.header{display:flex;align-items:center;justify-content:space-between}</style></head><body><div class=\"header\"><div><h2>The ReDecor</h2><div style=\"color:#666\">Estimate for ${customer}</div></div><div>${date}</div></div><table><thead><tr><th>Service</th><th>Details</th><th>Amount (₹)</th></tr></thead><tbody>${rowsHtml}</tbody></table><h3>Total: ${document.getElementById('grandTotal').innerText}</h3></body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  w.print();
+});
+
+function renderSummary(){
+  summaryBody.innerHTML = '';
+  let total = 0;
+  Object.values(services).forEach(s=>{
+    total += s.amt;
+    summaryBody.innerHTML += `<tr><td style=\"width:22%\">${s.key}</td><td>${s.details}</td><td>₹${s.amt.toLocaleString('en-IN', {maximumFractionDigits:2})}</td></tr>`;
+  });
+  document.getElementById('grandTotal').innerText = '₹ ' + total.toLocaleString('en-IN', {maximumFractionDigits:2});
+}
+</script>
+
+</body>
+</html>
